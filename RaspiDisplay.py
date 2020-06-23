@@ -7,6 +7,7 @@ from datetime import datetime
 import webbrowser
 import time
 import pygame
+import subprocess
 
 config = {
     'apiKey': "AIzaSyDqfcRf6eyzWOHSkTiz8x6eR4IspTg4Oqg",
@@ -16,14 +17,37 @@ config = {
     'storageBucket': "raspidisplay-74f02.appspot.com",
     'messagingSenderId': "347511820457",
     'appId': "1:347511820457:web:3b9c075c87b5dbcd57d9b8"
-
 }
 
+def clearFrame(frame):
+    # destroy all widgets from frame
+    for widget in frame.winfo_children():
+       widget.destroy()
+
 def clock():
-    t=time.strftime('%H:%M:%S',time.localtime())
+    t=time.strftime('%H:%M',time.localtime())
     if t!='':
-        timeLabel.config(text=t,font='Arial 35')
+        timeLabel.config(text=t)
     window.after(100,clock)
+
+def getWeather():
+    # Set the URL you want to webscrape from
+    url = """https://weather.com/es-CL/tiempo/hoy/l/a64186d9cfcc8ba1b5212834f28d189fc0699cbdd1c364c40920bbe4fbb0a7ea"""
+    # Connect to the URL
+    response = requests.get(url)
+    # Parse HTML and save to BeautifulSoup object
+    soup = BeautifulSoup(response.text, "html.parser")
+    #Temperatura actual
+    currentTemp = soup.find('span',{"data-testid": "TemperatureValue"}).text
+    desc = soup.find('div', {"data-testid": "wxPhrase"}).text
+    #print(currentTemp, desc)
+    #Maxima y minima
+    lista = list(soup.find('div', {"class": "_-_-components-src-organism-CurrentConditions-CurrentConditions--tempHiLoValue--3T1DG"}))
+    maxTemp = lista[0].text
+    minTemp = lista[2].text
+    #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
+    weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp}
+    return weather_data
 
 def get_news():
     url = "https://news.ycombinator.com/"
@@ -46,12 +70,79 @@ def init_storage():
 
 def init_window():
     window = Tk()
-    window.geometry('700x400')
-    #window.attributes('-fullscreen', 1)
+    #window.geometry('1200x600')
+    window.attributes('-fullscreen', 1)
     window.title('Welcome')
     return window
 
+def control_tv(command):
+    if command == "on":
+        subprocess.Popen("echo 'on 0' | cec-client -s -d 1")
+    elif command == "off":
+        subprocess.Popen("echo 'standby 0' | cec-client -s -d 1")
+    else:
+        pass
+
+def update_weather():
+    weather_data = getWeather()
+    clearFrame(frame_weather)
+    Label(frame_weather, text="Weather Today", bg='#f0c000', pady=5).pack(fill='x')
+    Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").pack()
+
+def update_news():
+    news = get_news()
+    clearFrame(frame_news)
+    Label(frame_news, text="What's new today", bg='#f0c000', pady=5).pack(fill='x')
+    for n in range(len(news)):
+        Label(frame_news, text='{}) {}'.format(n+1,news[n][0]), anchor="w", width=72, bg="#113455", fg="white", relief="solid").pack(pady=5)
+        if n<9:
+            window.bind('{}'.format(n+1), lambda event, url = news[n][1]: open_website(url)) 
+        else:
+            window.bind('0', lambda event, url = news[n][1]: open_website(url))
+
+def update_todo():
+    # Download todo from the cloud
+    path_todo_cloud = 'dailyFiles/todo.txt'
+    path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt"
+    storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt')
+    clearFrame(frame_todo)
+    Label(frame_todo, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+    with open(path_todo_local) as file:
+        for line in file:
+            print(line)
+            Label(frame_todo, text=line.rstrip('\n'), anchor="w", width=40).pack(pady=5)
+
+def update_routine():
+    # Download morning routine from the cloud
+    #path_todo_cloud = 'dailyFiles/todo.txt' #THIS IS GONNA BE CHANGED
+    path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt" #THIS IS GONNA BE CHANGED
+    #storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt') #THIS IS GONNA BE CHANGED
+    clearFrame(frame_routine)
+    Label(frame_routine, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+    with open(path_todo_local) as file:
+        for line in file:
+            print(line)
+            Label(frame_routine, text=line.rstrip('\n'), anchor="w", width=40).pack(pady=5)
+
+
+def update_alarm():
+    # Download Alarm_Time from the cloud
+    print('Downloading Alarm Time from Firebase')
+    path_alarm_time_cloud = 'dailyFiles/Alarm_Time.txt'
+    path_alarm_time_local = "/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt"
+    storage.child(path_alarm_time_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt')
+    time.sleep(20)
+    with open(path_alarm_time_local) as file:
+        for line in file:
+            line = line.split(':')
+            hour = line[0]
+            minute = line[1].rstrip('\n')
+    alarm_label.config(text='{}:{}'.format(hour, minute), font=('Arial Bold', 30))
+    alarm_label.pack(padx=40, pady=20)
+    print('Alarm is gonna be set at {}:{}'.format(hour, minute))
+    return (hour, minute)
 ############## FUNCIONES DE LA ALARMA #####################
+
 def wake_up():
     pygame.mixer.init()
     pygame.mixer.music.load("/home/pablo/PythonScripts/RaspiDisplay/finale.mp3")
@@ -75,104 +166,106 @@ def calculo_dt(alarm_h, alarm_m):
         dt = delta
     return dt
 
-def set_alarm(container):
-    
+def set_alarm():
     #dt_to_check_fb = calculo_dt(3,0)
-    print('Checking Firebase in 10 seconds')
-    t1 = Timer(10, download_alarm_time, args=[container])
+    print('Checking Firebase in (1) second(s)')
+    t1 = Timer(1, update_All)
     t1.start()
 
 
-def download_alarm_time(container):
-    # Download Alarm_Time from the cloud
-    print('Downloading Alarm Time from Firebase')
-    path_alarm_time_cloud = 'dailyFiles/Alarm_Time.txt'
-    path_alarm_time_local = "/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt"
-    storage.child(path_alarm_time_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt')
+# If things are working properly consider changing the name of this function to 'update_all',
+# and create a function 'update_alarm' where i'll put all the setting the alarm process
+def update_All():
+    update_weather()
+    update_news()
+    update_todo()
+    update_routine()
+    hour, minute = update_alarm()
 
-    time.sleep(20)
-
-    with open(path_alarm_time_local) as file:
-        for line in file:
-            line = line.split(':')
-            hour = line[0]
-            minute = line[1].rstrip('\n')
-    
-    container['hour'] = hour
-    container['minute'] = minute
-    alarm_label.config(text='{}:{}'.format(hour, minute))
-    
-    print('Alarm is gonna be set at {}:{}'.format(hour, minute))
     print('Calculating time until waking up, and setting the alarm')
     dt = calculo_dt(int(hour),int(minute))
-    time.sleep(dt)
-
+    time.sleep(dt-60)
+    control_tv("on")
+    time.sleep(60)
     print('Ring!!!')
     wake_up()
     dt_to_check_fb = calculo_dt(3,0)
     time.sleep(dt_to_check_fb)
-    download_alarm_time(container)
+    update_All()
 ######################################################################
-
 
 
 #Initializing window. Window and timeLabel need to be global to be accessed by the clock function
 window = init_window()
-timeLabel=Label(window,justify='center',padx=30, pady=10, bg='lightblue')
-timeLabel.grid(row=1, column=0)
+
+
+#################################### SET FRAMES ########################################
+screen_width = window.winfo_screenwidth()
+screen_height = window.winfo_screenheight()
+dim = {
+    # (width, height)
+    'current time' : (round(screen_width * 0.31), round(screen_height * 0.26)),
+    'alarm time' : (round(screen_width * 0.31), round(screen_height * 0.14)),
+    'weather' : (round(screen_width * 0.31), round(screen_height * 0.3)),
+    'news' : (round(screen_width * 0.44), round(screen_height * 0.7)),
+    'todo' : (round(screen_width * 0.25), round(screen_height * 0.4)),
+    'routine' : (round(screen_width *0.25), round(screen_height * 0.6)),
+    'motivation' : (round(screen_width * 0.75), round(screen_height * 0.3))
+}
+
+frame_current_time = Frame(window, bg="#186090", width= dim['current time'][0], height=dim['current time'][1])
+frame_current_time.pack_propagate(False)
+frame_current_time.place(x = 0,y = 0)
+Label(frame_current_time, text="Current time", bg='#f0c000', pady=5).pack(fill='x')
+
+frame_alarm_time = Frame(window, bg="#3090a8", width=dim['alarm time'][0], height=dim['alarm time'][1])
+frame_alarm_time.pack_propagate(False)
+frame_alarm_time.place(x = 0,y = dim['current time'][1])
+Label(frame_alarm_time, text="Alarm set at", bg='#f0c000', pady=5).pack(fill='x')
+
+frame_weather = Frame(window, bg="#186090", width=dim['weather'][0], height=dim['weather'][1])
+frame_weather.pack_propagate(False)
+frame_weather.place(x = 0,y =dim['current time'][1] + dim['alarm time'][1])
+Label(frame_weather, text="Weather today", bg='#f0c000', pady=5).pack(fill='x')
+
+frame_news = Frame(window, bg="#184878", width=dim['news'][0], height=dim['news'][1])
+frame_news.pack_propagate(False)
+frame_news.place(x = dim['current time'][0],y = 0)
+Label(frame_news, text="What's new today", bg='#f0c000', pady=5).pack(fill='x')
+
+frame_routine = Frame(window, bg="#90d8d8", width=dim['todo'][0], height=dim['todo'][1])
+frame_routine.pack_propagate(False)
+frame_routine.place(x = dim['current time'][0] + dim['news'][0],y = 0)
+Label(frame_routine, text='Morning Routine!', bg='#f0c000', pady=5).pack(fill='x')
+
+frame_todo = Frame(window, bg="#186090", width=dim['routine'][0], height=dim['routine'][1])
+frame_todo.pack_propagate(False)
+frame_todo.place(x = dim['current time'][0] + dim['news'][0],y = dim['todo'][1])
+Label(frame_todo, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+
+frame_motivation = Frame(window, bg="#001830", width=dim['motivation'][0], height=dim['motivation'][1])
+frame_motivation.pack_propagate(False)
+frame_motivation.place(x = 0,y = dim['current time'][1] + dim['alarm time'][1] + dim['weather'][1])
+Label(frame_motivation, text="You got this!", bg='#f0c000', pady=5).pack(fill='x')
+
+
+# Current time label
+timeLabel=Label(frame_current_time,justify='center',padx=30, pady=10, bg="#186090", fg="white",font=("Arial Bold", 70))
+timeLabel.place(x=40,y=60)
 clock()
 
 # Initializing storage reference
 storage = init_storage()
 
-container = {'hour':'07', 'minute':'45'}
-alarm_label = Label(window, text='{}:{}'.format(container['hour'],container['minute']), font=("Arial Bold", 40))
+# Alarm time container and label
+alarm_label = Label(frame_alarm_time, text='Getting time from Firebase', bg="#3090a8",fg="white",font=("Arial Bold", 18))
+alarm_label.pack(fill='x')
 
 
 def main():
 
-    set_alarm(container)
+    set_alarm()
     window.bind()
-    # Download todo from the cloud
-    path_todo_cloud = 'dailyFiles/todo.txt'
-    path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt"
-    storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt')
-
-    # Display greeting
-    lbl = Label(window, text="Hello",font=("Arial Bold", 40))
-    lbl.grid(column=0, row=0)
-
-    # i controls the position of the elements within the first column. Starts at 2 cause 
-    # 0 and 1 are taken by the initial greeting and the current time
-    i=2 
-
-    #Display alarm time label
-    alarm_label.grid(row=i,column=0)
-    i = i+1
-
-    # Loading todo's and displaying them to screen
-    Label(window, text='Morning Routine!',width=80, anchor="w", bg='orange', pady=5).grid(row=i,column=0)
-    i = i+1
-    with open(path_todo_local) as file:
-        for line in file:
-            print(line)
-            Label(window, text=line.rstrip('\n'), anchor="w", width=80).grid(row=i, column=0)
-            i = i+1
-
-    #Load news data and displaying on screen
-    Label(window, text="What's new today",width=80, anchor="w", bg='orange', pady=5).grid(row=i,column=0)
-    i = i+1
-    
-    news = get_news()
-    for n in range(len(news)):
-        Label(window, text='{}) {}'.format(n+1,news[n][0]), anchor="w", width=80).grid(row=n+i, column=0)
-        # Binding each new to a number key
-        if n<9:
-            window.bind('{}'.format(n+1), lambda event, url = news[n][1]: open_website(url)) 
-        else:
-            window.bind('0', lambda event, url = news[n][1]: open_website(url))
-
-
     window.mainloop()
 
 main()
