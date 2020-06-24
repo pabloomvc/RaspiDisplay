@@ -58,7 +58,7 @@ def getWeather():
         if desc in weatherImages[image]:
             imageName = image
 
-    img = ImageTk.PhotoImage(Image.open('/home/pablo/PythonScripts/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
+    img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
     weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp, "image":img}
     return weather_data
@@ -122,7 +122,7 @@ def update_news():
 def update_todo():
     # Download todo from the cloud
     path_todo_cloud = 'dailyFiles/todo.txt'
-    path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt"
+    path_todo_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/todo.txt"
     storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt')
     clearFrame(frame_todo)
     Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
@@ -134,7 +134,7 @@ def update_todo():
 def update_routine():
     # Download morning routine from the cloud
     #path_todo_cloud = 'dailyFiles/todo.txt' #THIS IS GONNA BE CHANGED
-    path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt" #THIS IS GONNA BE CHANGED
+    path_todo_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/todo.txt" #THIS IS GONNA BE CHANGED
     #storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt') #THIS IS GONNA BE CHANGED
     clearFrame(frame_routine)
     Label(frame_routine, text="Morning Routine", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
@@ -148,8 +148,8 @@ def update_alarm():
     # Download Alarm_Time from the cloud
     print('Downloading Alarm Time from Firebase')
     path_alarm_time_cloud = 'dailyFiles/Alarm_Time.txt'
-    path_alarm_time_local = "/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt"
-    storage.child(path_alarm_time_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/Alarm_Time.txt')
+    path_alarm_time_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Alarm_Time.txt"
+    storage.child(path_alarm_time_cloud).download(path_alarm_time_local)
     time.sleep(20)
     with open(path_alarm_time_local) as file:
         for line in file:
@@ -164,7 +164,7 @@ def update_alarm():
 
 def wake_up():
     pygame.mixer.init()
-    pygame.mixer.music.load("/home/pablo/PythonScripts/RaspiDisplay/finale.mp3")
+    pygame.mixer.music.load("/home/pi/Documents/Projects/Dashboard/RaspiDisplay/finale.mp3")
     pygame.mixer.music.play()
     while pygame.mixer.music.get_busy() == True:
         continue
