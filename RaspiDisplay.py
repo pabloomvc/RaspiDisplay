@@ -123,7 +123,7 @@ def update_todo():
     # Download todo from the cloud
     path_todo_cloud = 'dailyFiles/todo.txt'
     path_todo_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/todo.txt"
-    storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt')
+    storage.child(path_todo_cloud).download(path_todo_local)
     clearFrame(frame_todo)
     Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_todo_local) as file:
