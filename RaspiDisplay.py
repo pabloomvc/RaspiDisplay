@@ -8,6 +8,7 @@ import webbrowser
 import time
 import pygame
 import subprocess
+from PIL import Image, ImageTk
 
 config = {
     'apiKey': "AIzaSyDqfcRf6eyzWOHSkTiz8x6eR4IspTg4Oqg",
@@ -32,7 +33,7 @@ def clock():
 
 def getWeather():
     # Set the URL you want to webscrape from
-    url = """https://weather.com/es-CL/tiempo/hoy/l/a64186d9cfcc8ba1b5212834f28d189fc0699cbdd1c364c40920bbe4fbb0a7ea"""
+    url = """https://weather.com/en-GB/weather/today/l/a64186d9cfcc8ba1b5212834f28d189fc0699cbdd1c364c40920bbe4fbb0a7ea"""
     # Connect to the URL
     response = requests.get(url)
     # Parse HTML and save to BeautifulSoup object
@@ -45,8 +46,21 @@ def getWeather():
     lista = list(soup.find('div', {"class": "_-_-components-src-organism-CurrentConditions-CurrentConditions--tempHiLoValue--3T1DG"}))
     maxTemp = lista[0].text
     minTemp = lista[2].text
+    #Load corresponding image
+    print(list(desc))
+    weatherImages = {
+        'Sunny':['Sunny', 'Fair', 'Clear'], 
+        'Partly Cloudy':['Partly Cloudy'],
+        'Mostly Cloudy': ['Mostly Cloudy', 'Cloudy'],
+        'Rainy': ['Rainy','Showers','PM Showers', 'AM Showers', 'Rain']
+        }
+    for image in weatherImages.keys():
+        if desc in weatherImages[image]:
+            imageName = image
+
+    img = ImageTk.PhotoImage(Image.open('/home/pablo/PythonScripts/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
-    weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp}
+    weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp, "image":img}
     return weather_data
 
 def get_news():
@@ -86,15 +100,20 @@ def control_tv(command):
 def update_weather():
     weather_data = getWeather()
     clearFrame(frame_weather)
-    Label(frame_weather, text="Weather Today", bg='#f0c000', pady=5).pack(fill='x')
-    Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").pack()
+    Label(frame_weather, text="Weather Today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
+    imgLabel = Label(frame_weather, image=weather_data['image'],borderwidth=0, highlightthickness = 0)#,borderwidth=0, highlightthickness = 0
+    imgLabel.image = weather_data['image']
+    imgLabel.place(x=10, y=40)
+    temp_pos_y = 45
+    Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4,y=temp_pos_y)
+    Label(frame_weather, text=weather_data['description'], font=('Arial Bold', 20), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4+5,y=dim['weather'][1]*0.58)
 
 def update_news():
     news = get_news()
     clearFrame(frame_news)
-    Label(frame_news, text="What's new today", bg='#f0c000', pady=5).pack(fill='x')
+    Label(frame_news, text="What's new today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     for n in range(len(news)):
-        Label(frame_news, text='{}) {}'.format(n+1,news[n][0]), anchor="w", width=72, bg="#113455", fg="white", relief="solid").pack(pady=5)
+        Label(frame_news, text='{}) {}'.format(n+1,news[n][0]), anchor="w", width=72, bg="#113455", fg="white", relief="solid",font=('Arial Bold', 12)).pack(padx=10,pady=12)
         if n<9:
             window.bind('{}'.format(n+1), lambda event, url = news[n][1]: open_website(url)) 
         else:
@@ -106,11 +125,11 @@ def update_todo():
     path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt"
     storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt')
     clearFrame(frame_todo)
-    Label(frame_todo, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+    Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_todo_local) as file:
         for line in file:
             print(line)
-            Label(frame_todo, text=line.rstrip('\n'), anchor="w", width=40).pack(pady=5)
+            Label(frame_todo, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="white", bg="#185D8C").pack(padx=20,pady=15)
 
 def update_routine():
     # Download morning routine from the cloud
@@ -118,11 +137,11 @@ def update_routine():
     path_todo_local = "/home/pablo/PythonScripts/RaspiDisplay/todo.txt" #THIS IS GONNA BE CHANGED
     #storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt') #THIS IS GONNA BE CHANGED
     clearFrame(frame_routine)
-    Label(frame_routine, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+    Label(frame_routine, text="Morning Routine", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_todo_local) as file:
         for line in file:
             print(line)
-            Label(frame_routine, text=line.rstrip('\n'), anchor="w", width=40).pack(pady=5)
+            Label(frame_routine, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="#184878", bg="#B4E4E4").pack(padx=20,pady=15)
 
 
 def update_alarm():
@@ -216,37 +235,37 @@ dim = {
 frame_current_time = Frame(window, bg="#186090", width= dim['current time'][0], height=dim['current time'][1])
 frame_current_time.pack_propagate(False)
 frame_current_time.place(x = 0,y = 0)
-Label(frame_current_time, text="Current time", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_current_time, text="Current time", bg='#f0c000', pady=5,font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_alarm_time = Frame(window, bg="#3090a8", width=dim['alarm time'][0], height=dim['alarm time'][1])
 frame_alarm_time.pack_propagate(False)
 frame_alarm_time.place(x = 0,y = dim['current time'][1])
-Label(frame_alarm_time, text="Alarm set at", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_alarm_time, text="Alarm set at", bg='#f0c000', pady=5 ,font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_weather = Frame(window, bg="#186090", width=dim['weather'][0], height=dim['weather'][1])
 frame_weather.pack_propagate(False)
 frame_weather.place(x = 0,y =dim['current time'][1] + dim['alarm time'][1])
-Label(frame_weather, text="Weather today", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_weather, text="Weather today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_news = Frame(window, bg="#184878", width=dim['news'][0], height=dim['news'][1])
 frame_news.pack_propagate(False)
 frame_news.place(x = dim['current time'][0],y = 0)
-Label(frame_news, text="What's new today", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_news, text="What's new today", bg='#f0c000', pady=5,font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_routine = Frame(window, bg="#90d8d8", width=dim['todo'][0], height=dim['todo'][1])
 frame_routine.pack_propagate(False)
 frame_routine.place(x = dim['current time'][0] + dim['news'][0],y = 0)
-Label(frame_routine, text='Morning Routine!', bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_routine, text='Morning Routine!', bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_todo = Frame(window, bg="#186090", width=dim['routine'][0], height=dim['routine'][1])
 frame_todo.pack_propagate(False)
 frame_todo.place(x = dim['current time'][0] + dim['news'][0],y = dim['todo'][1])
-Label(frame_todo, text="For today", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
 
 frame_motivation = Frame(window, bg="#001830", width=dim['motivation'][0], height=dim['motivation'][1])
 frame_motivation.pack_propagate(False)
 frame_motivation.place(x = 0,y = dim['current time'][1] + dim['alarm time'][1] + dim['weather'][1])
-Label(frame_motivation, text="You got this!", bg='#f0c000', pady=5).pack(fill='x')
+Label(frame_motivation, text="You got this!", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
 
 
 # Current time label
