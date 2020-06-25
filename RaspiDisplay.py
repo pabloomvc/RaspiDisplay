@@ -75,7 +75,10 @@ def get_news():
     return data
 
 def open_website(url):
-    webbrowser.open(url)
+    #Since webbrowser uses raspberry's default browser (Chromium, which uses too many resouces)
+    #We're gonna open dillo from a headless terminal, using subprocess
+    #webbrowser.open(url)
+    subprocess.Popen(['dillo', url])
 
 def init_storage():
     firebase = pyrebase.initialize_app(config)
