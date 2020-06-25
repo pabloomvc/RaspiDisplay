@@ -78,7 +78,9 @@ def open_website(url):
     #Since webbrowser uses raspberry's default browser (Chromium, which uses too many resouces)
     #We're gonna open dillo from a headless terminal, using subprocess
     #webbrowser.open(url)
-    subprocess.Popen(['dillo', url])
+    url = url.lstrip('https://')
+    window_size = '{}x{}'.format(screen_width,screen_height)
+    subprocess.Popen(['dillo', '-g', window_size, url])
 
 def init_storage():
     firebase = pyrebase.initialize_app(config)
@@ -145,7 +147,6 @@ def update_routine():
         for line in file:
             print(line)
             Label(frame_routine, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="#184878", bg="#B4E4E4").pack(padx=20,pady=15)
-
 
 def update_alarm():
     # Download Alarm_Time from the cloud
