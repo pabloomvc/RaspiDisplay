@@ -133,12 +133,12 @@ def update_todo():
 
 def update_routine():
     # Download morning routine from the cloud
-    #path_todo_cloud = 'dailyFiles/todo.txt' #THIS IS GONNA BE CHANGED
-    path_todo_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/todo.txt" #THIS IS GONNA BE CHANGED
-    #storage.child(path_todo_cloud).download('/home/pablo/PythonScripts/RaspiDisplay/todo.txt') #THIS IS GONNA BE CHANGED
+    path_routine_cloud = 'dailyFiles/Morning_Routine.txt' #THIS IS GONNA BE CHANGED
+    path_routine_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Morning_Routine.txt" #THIS IS GONNA BE CHANGED
+    storage.child(path_routine_cloud).download(path_routine_local) #THIS IS GONNA BE CHANGED
     clearFrame(frame_routine)
     Label(frame_routine, text="Morning Routine", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
-    with open(path_todo_local) as file:
+    with open(path_routine_local) as file:
         for line in file:
             print(line)
             Label(frame_routine, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="#184878", bg="#B4E4E4").pack(padx=20,pady=15)
@@ -191,25 +191,34 @@ def set_alarm():
     t1 = Timer(1, update_All)
     t1.start()
 
-
-# If things are working properly consider changing the name of this function to 'update_all',
-# and create a function 'update_alarm' where i'll put all the setting the alarm process
 def update_All():
     update_weather()
     update_news()
     update_todo()
     update_routine()
     hour, minute = update_alarm()
+    hour, minute = int(hour), int(minute)
+    print('Calculating time until the alarm is supposed to ring')
+    dt = calculo_dt(hour,minute) #dt is the number of seconds until the alarm goes off
 
-    print('Calculating time until waking up, and setting the alarm')
-    dt = calculo_dt(int(hour),int(minute))
-    time.sleep(dt-60)
+    while dt > 70: #I want to turn the tv on 60 seconds before the alarm goes off, so i put 60 instead of 60 to give it a little margin
+        update_weather()
+        update_news()
+        update_todo()
+        update_routine()
+        time.sleep(600) #sleep for 10 min and then loop again, meaning everything will be updated every 10 min
+        dt = calculo_dt(hour,minute)
+
+    print('Turning TV on one minute after ringing')
+    time.sleep(dt-60) #Itll wake up one minute before the alarm goes off and turn the tv on
     control_tv("on")
     time.sleep(60)
     print('Ring!!!')
     wake_up()
-    dt_to_check_fb = calculo_dt(3,0)
-    time.sleep(dt_to_check_fb)
+    #Next 2 lines commented out cause theres no need to check firebase at 3am since now itll be done ever 10 minutes
+    #dt_to_check_fb = calculo_dt(3,0)
+    #time.sleep(dt_to_check_fb)
+    time.sleep(5) #For stability
     update_All()
 ######################################################################
 
