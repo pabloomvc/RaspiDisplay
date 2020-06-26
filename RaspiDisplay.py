@@ -49,16 +49,18 @@ def getWeather():
     #Load corresponding image
     print(list(desc))
     weatherImages = {
-        'Sunny':['Sunny', 'Fair', 'Clear'], 
+        'Sunny':['Sunny', 'Fair', 'Clear','Mostly Sunny'], 
         'Partly Cloudy':['Partly Cloudy'],
-        'Mostly Cloudy': ['Mostly Cloudy', 'Cloudy'],
-        'Rainy': ['Rainy','Showers','PM Showers', 'AM Showers', 'Rain']
+        'Mostly Cloudy': ['Mostly Cloudy', 'Cloudy','Mostly Cloudy / Wind'],
+        'Rainy': ['Rainy','Showers','PM Showers', 'AM Showers', 'Rain','Few Showers','T-Storms','AM Light Rain / Wind']
         }
     for image in weatherImages.keys():
         if desc in weatherImages[image]:
             imageName = image
-
-    img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
+    try:
+        img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
+    except:
+        image = None
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
     weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp, "image":img}
     return weather_data
@@ -96,9 +98,9 @@ def init_window():
 
 def control_tv(command):
     if command == "on":
-        subprocess.Popen("echo 'on 0' | cec-client -s -d 1")
+        subprocess.Popen("echo 'on 0' | cec-client -s -d 1", shell=True)
     elif command == "off":
-        subprocess.Popen("echo 'standby 0' | cec-client -s -d 1")
+        subprocess.Popen("echo 'standby 0' | cec-client -s -d 1", shell=True)
     else:
         pass
 
@@ -106,9 +108,13 @@ def update_weather():
     weather_data = getWeather()
     clearFrame(frame_weather)
     Label(frame_weather, text="Weather Today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
+
     imgLabel = Label(frame_weather, image=weather_data['image'],borderwidth=0, highlightthickness = 0)#,borderwidth=0, highlightthickness = 0
     imgLabel.image = weather_data['image']
+
+
     imgLabel.place(x=10, y=40)
+    
     temp_pos_y = 45
     Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4,y=temp_pos_y)
     Label(frame_weather, text=weather_data['description'], font=('Arial Bold', 20), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4+5,y=dim['weather'][1]*0.58)
