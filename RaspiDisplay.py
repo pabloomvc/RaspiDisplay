@@ -52,7 +52,7 @@ def getWeather():
         'Sunny':['Sunny', 'Fair', 'Clear','Mostly Sunny'], 
         'Partly Cloudy':['Partly Cloudy'],
         'Mostly Cloudy': ['Mostly Cloudy', 'Cloudy','Mostly Cloudy / Wind'],
-        'Rainy': ['Rainy','Showers','PM Showers', 'AM Showers', 'Rain','Few Showers','T-Storms','AM Light Rain / Wind']
+        'Rainy': ['Rainy','Showers','PM Showers', 'AM Showers', 'Rain','Few Showers','T-Storms','AM Light Rain / Wind','Light Rain']
         }
     for image in weatherImages.keys():
         if desc in weatherImages[image]:
@@ -60,7 +60,7 @@ def getWeather():
     try:
         img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
     except:
-        image = None
+        img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/default_image.jpg').resize((150, 150)))
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
     weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp, "image":img}
     return weather_data
@@ -111,8 +111,6 @@ def update_weather():
 
     imgLabel = Label(frame_weather, image=weather_data['image'],borderwidth=0, highlightthickness = 0)#,borderwidth=0, highlightthickness = 0
     imgLabel.image = weather_data['image']
-
-
     imgLabel.place(x=10, y=40)
     
     temp_pos_y = 45
