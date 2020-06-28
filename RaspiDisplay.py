@@ -57,7 +57,7 @@ def getWeather():
         if desc in weatherImages[image]:
             imageName = image
     try:
-        img = ImageTk.PhotoImage(Image.open('{}/Images/{}.jpg'.format(path_to_project_folder,imageName)).resize((150, 150)))
+        img = ImageTk.PhotoImage(Image.open('{}/Images/{}.jpg'.format(path_to_project_folder,imageName)).resize((170, 170)))
     except:
         img = ImageTk.PhotoImage(Image.open('{}/Images/default_image.jpg'.format(path_to_project_folder)).resize((150, 150)))
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
@@ -90,8 +90,8 @@ def init_storage():
 
 def init_window():
     window = Tk()
-    window.geometry('1200x600')
-    #window.attributes('-fullscreen', 1)
+    #window.geometry('1200x600')
+    window.attributes('-fullscreen', 1)
     window.title('Welcome')
     return window
 
@@ -120,11 +120,11 @@ def update_weather():
 
     imgLabel = Label(frame_weather, image=weather_data['image'],borderwidth=0, highlightthickness = 0)#,borderwidth=0, highlightthickness = 0
     imgLabel.image = weather_data['image']
-    imgLabel.place(x=10, y=40)
+    imgLabel.place(x=18, y=42)
     
-    temp_pos_y = 45
-    Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4,y=temp_pos_y)
-    Label(frame_weather, text=weather_data['description'], font=('Arial Bold', 20), bg="#186090", fg="white").place(x=dim['weather'][0]*0.4+5,y=dim['weather'][1]*0.58)
+    temp_pos_y = 60
+    Label(frame_weather, text=weather_data['currentTemp'], font=('Arial Bold', 60), bg="#186090", fg="white").place(x=dim['weather'][0]*0.46,y=temp_pos_y)
+    Label(frame_weather, text=weather_data['description'], font=('Arial Bold', 20), bg="#186090", fg="white").place(x=dim['weather'][0]*0.46+5,y=dim['weather'][1]*0.63)
 
 def update_news():
     news = get_news()
