@@ -47,7 +47,6 @@ def getWeather():
     maxTemp = lista[0].text
     minTemp = lista[2].text
     #Load corresponding image
-    print(list(desc))
     weatherImages = {
         'Sunny':['Sunny', 'Fair', 'Clear','Mostly Sunny'], 
         'Partly Cloudy':['Partly Cloudy'],
@@ -58,9 +57,9 @@ def getWeather():
         if desc in weatherImages[image]:
             imageName = image
     try:
-        img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/{}.jpg'.format(imageName)).resize((150, 150)))
+        img = ImageTk.PhotoImage(Image.open('{}/Images/{}.jpg'.format(path_to_project_folder,imageName)).resize((150, 150)))
     except:
-        img = ImageTk.PhotoImage(Image.open('/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Images/default_image.jpg').resize((150, 150)))
+        img = ImageTk.PhotoImage(Image.open('{}/Images/default_image.jpg'.format(path_to_project_folder)).resize((150, 150)))
     #print("Max: {}C / Min: {}C".format(maxTemp,minTemp))
     weather_data = {"currentTemp":currentTemp, "description":desc, "maxTemp":maxTemp, "minTemp":minTemp, "image":img}
     return weather_data
@@ -80,7 +79,7 @@ def open_website(url):
     #Since webbrowser uses raspberry's default browser (Chromium, which uses too many resouces)
     #We're gonna open dillo from a headless terminal, using subprocess
     #webbrowser.open(url)
-    url = url.lstrip('https://')
+    #url = url.lstrip('https://')
     window_size = '{}x{}'.format(screen_width,screen_height)
     subprocess.Popen(['dillo', '-g', window_size, url])
 
@@ -91,14 +90,24 @@ def init_storage():
 
 def init_window():
     window = Tk()
-    #window.geometry('1200x600')
-    window.attributes('-fullscreen', 1)
+    window.geometry('1200x600')
+    #window.attributes('-fullscreen', 1)
     window.title('Welcome')
     return window
 
 def control_tv(command):
     if command == "on":
-        subprocess.Popen("echo 'on 0' | cec-client -s -d 1", shell=True)
+        try:
+            subprocess.Popen(["echo", "'on 0'", "|", "cec-client", "-s", "-d", "1"])
+            print("#################################")
+            print("FIRST COMMAND WORKED (NO SHELL)")
+            print("#################################")
+        except:
+            subprocess.Popen("echo 'on 0' | cec-client -s -d 1", shell=True)
+            print("#################################")
+            print("SECOND COMMAND USED, WITH A SHELL, BECAUSE THE FIRST ONE DIDNT WORK")
+            print("#################################")
+
     elif command == "off":
         subprocess.Popen("echo 'standby 0' | cec-client -s -d 1", shell=True)
     else:
@@ -131,34 +140,32 @@ def update_news():
 def update_todo():
     # Download todo from the cloud
     path_todo_cloud = 'dailyFiles/todo.txt'
-    path_todo_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/todo.txt"
+    path_todo_local = "{}/todo.txt".format(path_to_project_folder)
     storage.child(path_todo_cloud).download(path_todo_local)
     clearFrame(frame_todo)
     Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_todo_local) as file:
         for line in file:
-            print(line)
             Label(frame_todo, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="white", bg="#185D8C").pack(padx=20,pady=15)
 
 def update_routine():
     # Download morning routine from the cloud
-    path_routine_cloud = 'dailyFiles/Morning_Routine.txt' #THIS IS GONNA BE CHANGED
-    path_routine_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Morning_Routine.txt" #THIS IS GONNA BE CHANGED
-    storage.child(path_routine_cloud).download(path_routine_local) #THIS IS GONNA BE CHANGED
+    path_routine_cloud = 'dailyFiles/Morning_Routine.txt'
+    path_routine_local = "{}/Morning_Routine.txt".format(path_to_project_folder)
+    storage.child(path_routine_cloud).download(path_routine_local)
     clearFrame(frame_routine)
     Label(frame_routine, text="Morning Routine", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_routine_local) as file:
         for line in file:
-            print(line)
             Label(frame_routine, text='● '+ line.rstrip('\n'), anchor="w", width=40, font=('Arial', 18, 'bold'), fg="#184878", bg="#B4E4E4").pack(padx=20,pady=15)
 
 def update_alarm():
     # Download Alarm_Time from the cloud
     print('Downloading Alarm Time from Firebase')
     path_alarm_time_cloud = 'dailyFiles/Alarm_Time.txt'
-    path_alarm_time_local = "/home/pi/Documents/Projects/Dashboard/RaspiDisplay/Alarm_Time.txt"
+    path_alarm_time_local = "{}/Alarm_Time.txt".format(path_to_project_folder)
     storage.child(path_alarm_time_cloud).download(path_alarm_time_local)
-    time.sleep(20)
+    time.sleep(5)
     with open(path_alarm_time_local) as file:
         for line in file:
             line = line.split(':')
@@ -172,7 +179,7 @@ def update_alarm():
 
 def wake_up():
     pygame.mixer.init()
-    pygame.mixer.music.load("/home/pi/Documents/Projects/Dashboard/RaspiDisplay/finale.mp3")
+    pygame.mixer.music.load("{}/finale.mp3".format(path_to_project_folder))
     pygame.mixer.music.play()
     while pygame.mixer.music.get_busy() == True:
         continue
@@ -208,14 +215,18 @@ def update_All():
     hour, minute = int(hour), int(minute)
     print('Calculating time until the alarm is supposed to ring')
     dt = calculo_dt(hour,minute) #dt is the number of seconds until the alarm goes off
+    print('dt is {}'.format(dt))
 
-    while dt > 70: #I want to turn the tv on 60 seconds before the alarm goes off, so i put 60 instead of 60 to give it a little margin
+    while dt > 670: #I want to turn the tv on 60 seconds before the alarm goes off, so i put 60 instead of 60 to give it a little margin
         update_weather()
         update_news()
         update_todo()
         update_routine()
+        hour, minute = update_alarm()
+        hour, minute = int(hour), int(minute)
         time.sleep(600) #sleep for 10 min and then loop again, meaning everything will be updated every 10 min
         dt = calculo_dt(hour,minute)
+        print('dt is {}'.format(dt))
 
     print('Turning TV on one minute after ringing')
     time.sleep(dt-60) #Itll wake up one minute before the alarm goes off and turn the tv on
@@ -230,6 +241,9 @@ def update_All():
     update_All()
 ######################################################################
 
+#To avoid changing all the paths between raspi and this laptop, gonna set 2 paths
+path_to_project_folder = '/home/pi/Documents/Projects/Dashboard/RaspiDisplay'
+#path_to_project_folder = '/home/pablo/PythonScripts/RaspiDisplay'
 
 #Initializing window. Window and timeLabel need to be global to be accessed by the clock function
 window = init_window()
