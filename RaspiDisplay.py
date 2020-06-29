@@ -245,8 +245,8 @@ def update_All():
 ######################################################################
 
 #To avoid changing all the paths between raspi and this laptop, gonna set 2 paths
-#path_to_project_folder = '/home/pi/Documents/Projects/Dashboard/RaspiDisplay'
-path_to_project_folder = '/home/pablo/PythonScripts/RaspiDisplay'
+path_to_project_folder = '/home/pi/Documents/Projects/Dashboard/RaspiDisplay'
+#path_to_project_folder = '/home/pablo/PythonScripts/RaspiDisplay'
 
 #Initializing window. Window and timeLabel need to be global to be accessed by the clock function
 window = init_window()
