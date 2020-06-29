@@ -141,7 +141,8 @@ def update_todo():
     # Download todo from the cloud
     path_todo_cloud = 'dailyFiles/todo.txt'
     path_todo_local = "{}/todo.txt".format(path_to_project_folder)
-    storage.child(path_todo_cloud).download(path_todo_local)
+    storage_ = init_storage()
+    storage_.child(path_todo_cloud).download(path_todo_local)
     clearFrame(frame_todo)
     Label(frame_todo, text="For today", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_todo_local) as file:
@@ -152,7 +153,8 @@ def update_routine():
     # Download morning routine from the cloud
     path_routine_cloud = 'dailyFiles/Morning_Routine.txt'
     path_routine_local = "{}/Morning_Routine.txt".format(path_to_project_folder)
-    storage.child(path_routine_cloud).download(path_routine_local)
+    storage_ = init_storage()
+    storage_.child(path_routine_cloud).download(path_routine_local)
     clearFrame(frame_routine)
     Label(frame_routine, text="Morning Routine", bg='#f0c000', pady=5, font=('Arial', 12, 'bold')).pack(fill='x')
     with open(path_routine_local) as file:
@@ -164,7 +166,8 @@ def update_alarm():
     print('Downloading Alarm Time from Firebase')
     path_alarm_time_cloud = 'dailyFiles/Alarm_Time.txt'
     path_alarm_time_local = "{}/Alarm_Time.txt".format(path_to_project_folder)
-    storage.child(path_alarm_time_cloud).download(path_alarm_time_local)
+    storage_ = init_storage()
+    storage_.child(path_alarm_time_cloud).download(path_alarm_time_local)
     time.sleep(5)
     with open(path_alarm_time_local) as file:
         for line in file:
@@ -242,8 +245,8 @@ def update_All():
 ######################################################################
 
 #To avoid changing all the paths between raspi and this laptop, gonna set 2 paths
-path_to_project_folder = '/home/pi/Documents/Projects/Dashboard/RaspiDisplay'
-#path_to_project_folder = '/home/pablo/PythonScripts/RaspiDisplay'
+#path_to_project_folder = '/home/pi/Documents/Projects/Dashboard/RaspiDisplay'
+path_to_project_folder = '/home/pablo/PythonScripts/RaspiDisplay'
 
 #Initializing window. Window and timeLabel need to be global to be accessed by the clock function
 window = init_window()
@@ -305,7 +308,7 @@ timeLabel.place(x=40,y=60)
 clock()
 
 # Initializing storage reference
-storage = init_storage()
+#storage = init_storage()
 
 # Alarm time container and label
 alarm_label = Label(frame_alarm_time, text='Getting time from Firebase', bg="#3090a8",fg="white",font=("Arial Bold", 18))
